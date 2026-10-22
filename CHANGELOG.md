@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Typed package marker, development dependencies, cross-platform quality checks, and tag-triggered PyPI trusted publishing workflow.
+- Community templates and a runnable offline demo with matching English and Turkish documentation.
+- Regression coverage for relative date filters, timezone boundaries, and bus factor windows.
+
+### Fixed
+
+- Ruff findings and Markdown formatter type errors without changing report formatting.
+- Relative date shorthand such as `--since 1y` and `--until 6m` now uses Git's supported relative date syntax.
+- First and last commit dates are now displayed in the HTML report header.
+
 ## [0.1.0] - 2026-10-22
 
 ### Added

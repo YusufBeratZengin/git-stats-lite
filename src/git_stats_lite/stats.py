@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from collections.abc import Iterable
+from contextlib import suppress
+from datetime import datetime, timezone
 
 from .anonymizer import Anonymizer
 from .languages import detect_language
@@ -38,18 +39,16 @@ def count_file_lines(repo_path: str, rel_path: str) -> int:
         return 0
 
 
-def _parse_commit_datetime(iso_str: str, ts: int) -> Tuple[datetime, datetime]:
+def _parse_commit_datetime(iso_str: str, ts: int) -> tuple[datetime, datetime]:
     """Return (local_dt, utc_dt) from commit ISO timestamp or UNIX epoch."""
     if iso_str:
-        try:
+        with suppress(ValueError, OverflowError):
             local_dt = datetime.fromisoformat(iso_str)
             # Ensure timezone awareness
             if local_dt.tzinfo is None:
                 local_dt = local_dt.replace(tzinfo=timezone.utc)
             utc_dt = local_dt.astimezone(timezone.utc)
             return local_dt, utc_dt
-        except Exception:
-            pass
 
     if ts > 0:
         utc_dt = datetime.fromtimestamp(ts, tz=timezone.utc)
@@ -72,7 +71,7 @@ class AuthorAccumulator:
         self.first_ts = float("inf")
         self.last_date_iso = ""
         self.last_ts = float("-inf")
-        self.active_days: Set[str] = set()
+        self.active_days: set[str] = set()
 
     def add_commit(self, dt: datetime, ts: int, iso_str: str, added: int, deleted: int, author_name: str) -> None:
         self.commits_count += 1
@@ -100,8 +99,8 @@ class LanguageAccumulator:
 
     def __init__(self, language: str) -> None:
         self.language = language
-        self.files: Set[str] = set()
-        self.commits: Set[str] = set()
+        self.files: set[str] = set()
+        self.commits: set[str] = set()
         self.lines_added = 0
         self.lines_deleted = 0
 
@@ -117,9 +116,9 @@ class FileAccumulator:
 
 
 def calculate_bus_factor(
-    commits: List[Tuple[int, str, int]],
+    commits: list[tuple[int, str, int]],
     window_months: int,
-    author_identities: Dict[str, Tuple[str, str]],
+    author_identities: dict[str, tuple[str, str]],
 ) -> BusFactorResult:
     """Calculate bus factor (minimum authors covering 50% and 80% of lines changed).
 
@@ -138,7 +137,7 @@ def calculate_bus_factor(
     # Default 30.4375 days per month
     cutoff_ts = max_ts - int(window_months * 30.4375 * 86400) if window_months > 0 else 0
 
-    window_changes: Dict[str, int] = {}
+    window_changes: dict[str, int] = {}
     total_window_lines = 0
 
     for ts, author_key, lines in commits:
@@ -173,7 +172,7 @@ def calculate_bus_factor(
 
     # 50% threshold
     cum_50 = 0
-    authors_50: List[BusFactorAuthor] = []
+    authors_50: list[BusFactorAuthor] = []
     for key, lines in sorted_authors:
         cum_50 += lines
         pct = (lines / total_window_lines) * 100.0
@@ -185,7 +184,7 @@ def calculate_bus_factor(
 
     # 80% threshold
     cum_80 = 0
-    authors_80: List[BusFactorAuthor] = []
+    authors_80: list[BusFactorAuthor] = []
     for key, lines in sorted_authors:
         cum_80 += lines
         pct = (lines / total_window_lines) * 100.0
@@ -215,7 +214,7 @@ class StatsAggregator:
         repo_path: str = ".",
         branch: str = "main",
         bus_factor_months: int = 6,
-        anonymizer: Optional[Anonymizer] = None,
+        anonymizer: Anonymizer | None = None,
         timezone_mode: str = "local",
     ) -> None:
         self.repo_name = repo_name or os.path.basename(os.path.abspath(repo_path))
@@ -225,26 +224,26 @@ class StatsAggregator:
         self.anonymizer = anonymizer
         self.timezone_mode = timezone_mode
 
-        self.authors: Dict[str, AuthorAccumulator] = {}
-        self.files: Dict[str, FileAccumulator] = {}
-        self.languages: Dict[str, LanguageAccumulator] = {}
+        self.authors: dict[str, AuthorAccumulator] = {}
+        self.files: dict[str, FileAccumulator] = {}
+        self.languages: dict[str, LanguageAccumulator] = {}
 
         self.grid_local = [[0] * 24 for _ in range(7)]
         self.grid_utc = [[0] * 24 for _ in range(7)]
 
-        self.commits_by_day: Dict[str, int] = {}
-        self.commits_by_week: Dict[str, int] = {}
+        self.commits_by_day: dict[str, int] = {}
+        self.commits_by_week: dict[str, int] = {}
 
         self.total_commits = 0
         self.total_lines_added = 0
         self.total_lines_deleted = 0
-        self.first_commit_date: Optional[str] = None
-        self.last_commit_date: Optional[str] = None
+        self.first_commit_date: str | None = None
+        self.last_commit_date: str | None = None
         self._min_ts = float("inf")
         self._max_ts = float("-inf")
 
-        self._bus_records: List[Tuple[int, str, int]] = []
-        self._all_active_days: Set[str] = set()
+        self._bus_records: list[tuple[int, str, int]] = []
+        self._all_active_days: set[str] = set()
 
     def process_commit(self, commit: CommitInfo) -> None:
         """Process a single commit into all aggregates."""
@@ -334,8 +333,8 @@ class StatsAggregator:
         total_lines_changed = self.total_lines_added + self.total_lines_deleted
 
         # Author stats list
-        author_list: List[AuthorStats] = []
-        author_display_identities: Dict[str, Tuple[str, str]] = {}
+        author_list: list[AuthorStats] = []
+        author_display_identities: dict[str, tuple[str, str]] = {}
 
         for key, acc in self.authors.items():
             name = acc.name or key
@@ -374,7 +373,7 @@ class StatsAggregator:
         author_list.sort(key=lambda a: (a.commits_count, a.lines_changed), reverse=True)
 
         # File stats list
-        file_list: List[FileStats] = []
+        file_list: list[FileStats] = []
         for path, f_acc in self.files.items():
             f_changed = f_acc.lines_added + f_acc.lines_deleted
             # Hotspot score: changes x size on disk if available, else commits x changes
@@ -399,7 +398,7 @@ class StatsAggregator:
         file_list.sort(key=lambda f: (f.hotspot_score, f.lines_changed), reverse=True)
 
         # Language stats list
-        language_list: List[LanguageStats] = []
+        language_list: list[LanguageStats] = []
         for lang, l_acc in self.languages.items():
             l_changed = l_acc.lines_added + l_acc.lines_deleted
             pct_lines = (l_changed / total_lines_changed * 100.0) if total_lines_changed > 0 else 0.0

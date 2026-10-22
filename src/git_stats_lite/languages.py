@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import os
-from typing import Dict
 
 # Map extensions (lowercase, with leading dot) to canonical language names
-EXTENSION_MAP: Dict[str, str] = {
+EXTENSION_MAP: dict[str, str] = {
     # Systems & Compiled
     ".c": "C",
     ".h": "C/C++ Header",
@@ -134,7 +133,7 @@ EXTENSION_MAP: Dict[str, str] = {
 }
 
 # Special exact filenames (case-insensitive comparison)
-SPECIAL_FILENAMES: Dict[str, str] = {
+SPECIAL_FILENAMES: dict[str, str] = {
     "dockerfile": "Dockerfile",
     "containerfile": "Dockerfile",
     "makefile": "Makefile",
@@ -170,9 +169,9 @@ def detect_language(path: str) -> str:
     # Handle multi-part extensions like .d.ts or .tar.gz
     if lower_base.endswith(".d.ts"):
         return "TypeScript (Type Definitions)"
-    if lower_base.endswith(".spec.ts") or lower_base.endswith(".test.ts"):
+    if lower_base.endswith((".spec.ts", ".test.ts")):
         return "TypeScript"
-    if lower_base.endswith(".spec.js") or lower_base.endswith(".test.js"):
+    if lower_base.endswith((".spec.js", ".test.js")):
         return "JavaScript"
 
     _, ext = os.path.splitext(lower_base)

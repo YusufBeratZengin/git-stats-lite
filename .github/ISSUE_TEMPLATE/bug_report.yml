@@ -1,0 +1,40 @@
+name: Bug report
+description: Report reproducible incorrect behavior
+body:
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched existing issues
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, Python version, and Git version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Use a synthetic repository; do not include personal data or secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: text

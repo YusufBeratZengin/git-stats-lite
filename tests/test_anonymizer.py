@@ -14,8 +14,8 @@ class TestAnonymizer(unittest.TestCase):
         self.anon = Anonymizer()
 
     def test_deterministic_hashing(self):
-        name1, email1 = self.anon.anonymize_author("Alice Smith", "alice@example.com")
-        name2, email2 = self.anon.anonymize_author("Alice Smith", "alice@example.com")
+        name1, email1 = self.anon.anonymize_author("Contributor A", "alice@example.com")
+        name2, email2 = self.anon.anonymize_author("Contributor A", "alice@example.com")
 
         self.assertEqual(name1, name2)
         self.assertEqual(email1, email2)
@@ -24,19 +24,19 @@ class TestAnonymizer(unittest.TestCase):
         self.assertTrue(email1.endswith("@privacy.local"))
 
     def test_different_authors_get_different_tokens(self):
-        name_a, _ = self.anon.anonymize_author("Alice", "alice@example.com")
-        name_b, _ = self.anon.anonymize_author("Bob", "bob@example.com")
+        name_a, _ = self.anon.anonymize_author("Contributor A", "alice@example.com")
+        name_b, _ = self.anon.anonymize_author("Contributor B", "bob@example.com")
 
         self.assertNotEqual(name_a, name_b)
 
     def test_fallback_when_email_missing(self):
-        name1, email1 = self.anon.anonymize_author("Charlie", "")
+        name1, email1 = self.anon.anonymize_author("Contributor C", "")
         self.assertTrue(name1.startswith("Author-"))
         self.assertTrue(email1.startswith("anon-"))
 
     def test_helper_methods(self):
-        name = self.anon.anonymize_name("Dave", "dave@example.com")
-        email = self.anon.anonymize_email("dave@example.com", "Dave")
+        name = self.anon.anonymize_name("Contributor D", "d@example.invalid")
+        email = self.anon.anonymize_email("d@example.invalid", "Contributor D")
         self.assertTrue(name.startswith("Author-"))
         self.assertTrue(email.startswith("anon-"))
 

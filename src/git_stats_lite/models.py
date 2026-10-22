@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -14,7 +14,7 @@ class FileDiff:
     additions: int = 0
     deletions: int = 0
     is_binary: bool = False
-    old_path: Optional[str] = None
+    old_path: str | None = None
 
     @property
     def total_changes(self) -> int:
@@ -33,7 +33,7 @@ class CommitInfo:
     committer_date_iso: str
     committer_timestamp: int
     subject: str
-    files: List[FileDiff] = field(default_factory=list)
+    files: list[FileDiff] = field(default_factory=list)
 
 
 @dataclass
@@ -83,7 +83,7 @@ class LanguageStats:
 class ActivityHeatmap:
     """Weekday (0=Mon .. 6=Sun) x Hour (0 .. 23) matrix."""
 
-    grid: List[List[int]] = field(default_factory=lambda: [[0] * 24 for _ in range(7)])
+    grid: list[list[int]] = field(default_factory=lambda: [[0] * 24 for _ in range(7)])
     timezone_mode: str = "local"
     max_val: int = 0
     total_commits: int = 0
@@ -108,8 +108,8 @@ class BusFactorResult:
     total_lines_in_window: int
     bus_factor_50: int
     bus_factor_80: int
-    authors_50: List[BusFactorAuthor] = field(default_factory=list)
-    authors_80: List[BusFactorAuthor] = field(default_factory=list)
+    authors_50: list[BusFactorAuthor] = field(default_factory=list)
+    authors_80: list[BusFactorAuthor] = field(default_factory=list)
 
 
 @dataclass
@@ -119,8 +119,8 @@ class RepoReport:
     repo_name: str
     repo_path: str
     branch: str
-    first_commit_date: Optional[str]
-    last_commit_date: Optional[str]
+    first_commit_date: str | None
+    last_commit_date: str | None
     total_commits: int
     total_authors: int
     total_files_touched: int
@@ -128,17 +128,17 @@ class RepoReport:
     total_lines_deleted: int
     total_lines_changed: int
     active_days_count: int
-    authors: List[AuthorStats]
-    files: List[FileStats]
-    languages: List[LanguageStats]
+    authors: list[AuthorStats]
+    files: list[FileStats]
+    languages: list[LanguageStats]
     heatmap_local: ActivityHeatmap
     heatmap_utc: ActivityHeatmap
-    commits_by_day: Dict[str, int]
-    commits_by_week: Dict[str, int]
+    commits_by_day: dict[str, int]
+    commits_by_week: dict[str, int]
     bus_factor: BusFactorResult
     is_anonymized: bool
     generated_at: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert report to JSON-serializable dictionary."""
         return asdict(self)

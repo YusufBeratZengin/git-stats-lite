@@ -1,51 +1,34 @@
-# Contributing to git-stats-lite
+# Contributing
 
-Thank you for your interest in contributing to `git-stats-lite`.
+Use Python 3.10 or newer and Git. From a source checkout:
 
-## Core Guidelines
+```sh
+python -m pip install -e ".[dev]"
+python -m ruff check .
+python -m mypy src
+python -m pytest -q
+python examples/demo.py
+python -m build
+python -m twine check dist/*
+```
 
-- **Zero Runtime Dependencies:** The core package must rely exclusively on the Python standard library and system `git`. Do not add third-party runtime dependencies.
-- **Privacy First:** Ensure author information and file metadata are handled responsibly. Any new features exposing contributor details must integrate with the `--anonymize` pipeline.
-- **Python Compatibility:** Python >=3.10 is required. Ensure code complies with modern typing and standard library features.
-- **Conventional Commits:** Use standard Conventional Commits format (e.g. `feat: add metric`, `fix: handle binary diffs`, `test: add unit test`).
+Keep runtime dependencies empty, public APIs typed, and reports self-contained.
+Tests must run offline and use synthetic identities and temporary repositories.
+Keep README.md and README.tr.md in sync. Follow [the code of conduct](CODE_OF_CONDUCT.md).
+Use Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`, `test:`).
+Describe the resulting behavior and validation in each pull request.
 
-## Development Setup
+## Releasing
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/YusufBeratZengin/git-stats-lite.git
-   cd git-stats-lite
-   ```
+Maintainers configure a PyPI trusted publisher for repository
+`YusufBeratZengin/git-stats-lite`, workflow `publish.yml`, environment `pypi`.
+Create that GitHub environment with appropriate release protections. No API token is required.
 
-2. Verify that Python 3.10 or newer and Git are installed:
-   ```bash
-   python --version
-   git --version
-   ```
+1. Move the relevant `[Unreleased]` entries into a dated SemVer release section.
+2. Update the version in both pyproject.toml and src/git_stats_lite/__init__.py.
+3. Run all checks above, including the build and `twine check` dry run.
+4. Commit with `chore(release): vX.Y.Z`, then create tag `vX.Y.Z` and push it when approved.
 
-3. Run the test suite:
-   ```bash
-   python -m unittest discover -s tests -p "test_*.py" -v
-   ```
-
-4. Verify syntax:
-   ```bash
-   python -m compileall src tests
-   ```
-
-## Pull Request Process
-
-1. Create a feature branch from `main`:
-   ```bash
-   git checkout -b feature/my-feature
-   ```
-2. Write clean code and accompanying unit tests.
-3. Ensure all tests pass with zero failures before opening a pull request.
-4. Open a pull request against `main` on GitHub:
-   https://github.com/YusufBeratZengin/git-stats-lite/pulls
-
-## Code Style
-
-- Keep functions focused and well-documented.
-- Avoid external CSS/JS libraries in the HTML report generator. All inline SVG and CSS styles must remain self-contained.
-- Use explicit type annotations for public APIs and data models.
+The publish workflow verifies the tag against the package version, runs lint,
+typing and tests, builds and checks distributions, then publishes using OIDC.
+Stay on 0.x while the API is evolving; breaking changes increment the minor version.

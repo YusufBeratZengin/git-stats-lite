@@ -34,8 +34,7 @@ class TestEndToEnd(unittest.TestCase):
         res = subprocess.run(
             cmd,
             cwd=self.repo_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             env=merged_env,
             check=True,
@@ -55,16 +54,16 @@ class TestEndToEnd(unittest.TestCase):
         self._git(["commit", "-m", message], env=env)
 
     def test_full_metrics_and_outputs(self):
-        # 1. First commit by Alice (Python file)
+        # 1. First commit by Contributor A (Python file)
         src_dir = os.path.join(self.repo_dir, "src")
         os.makedirs(src_dir, exist_ok=True)
         py_file = os.path.join(src_dir, "calc.py")
         with open(py_file, "w", encoding="utf-8") as f:
             f.write("\n".join([f"def func_{i}(): pass" for i in range(20)]) + "\n")
 
-        self._commit("Add initial calc module", "Alice Smith", "alice@example.com", "2026-01-10T10:00:00+00:00")
+        self._commit("Add initial calc module", "Contributor A", "alice@example.com", "2026-01-10T10:00:00+00:00")
 
-        # 2. Second commit by Bob (Modify calc.py and add guide.md)
+        # 2. Second commit by Contributor B (Modify calc.py and add guide.md)
         docs_dir = os.path.join(self.repo_dir, "docs")
         os.makedirs(docs_dir, exist_ok=True)
         doc_file = os.path.join(docs_dir, "guide.md")
@@ -74,20 +73,20 @@ class TestEndToEnd(unittest.TestCase):
         with open(py_file, "a", encoding="utf-8") as f:
             f.write("def helper(): return 42\n")
 
-        self._commit("Add guide and helper", "Bob Jones", "bob@example.com", "2026-02-15T14:00:00+00:00")
+        self._commit("Add guide and helper", "Contributor B", "bob@example.com", "2026-02-15T14:00:00+00:00")
 
-        # 3. Third commit by Alice using GitHub noreply email
+        # 3. Third commit by Contributor A using GitHub noreply email
         with open(py_file, "a", encoding="utf-8") as f:
             f.write("def extra(): pass\n")
 
-        self._commit("Add extra logic", "Alice Smith", "12345+AliceSmith@users.noreply.github.com", "2026-03-20T16:00:00+00:00")
+        self._commit("Add extra logic", "Contributor A", "42+YusufBeratZengin@users.noreply.github.com", "2026-03-20T16:00:00+00:00")
 
-        # 4. Fourth commit by Charlie (deploy.sh)
+        # 4. Fourth commit by Contributor C (deploy.sh)
         sh_file = os.path.join(self.repo_dir, "deploy.sh")
         with open(sh_file, "w", encoding="utf-8") as f:
             f.write("#!/bin/bash\necho 'Deploying'\n")
 
-        self._commit("Add deploy script", "Charlie Brown", "charlie@example.com", "2026-04-10T18:00:00+00:00")
+        self._commit("Add deploy script", "Contributor C", "charlie@example.com", "2026-04-10T18:00:00+00:00")
 
         # Test CLI Terminal output
         exit_code = main([self.repo_dir])
@@ -138,11 +137,11 @@ class TestEndToEnd(unittest.TestCase):
         with open(anon_json_path, "r", encoding="utf-8") as f:
             anon_text = f.read()
 
-        self.assertNotIn("Alice Smith", anon_text)
+        self.assertNotIn("Contributor A", anon_text)
         self.assertNotIn("alice@example.com", anon_text)
-        self.assertNotIn("Bob Jones", anon_text)
+        self.assertNotIn("Contributor B", anon_text)
         self.assertNotIn("bob@example.com", anon_text)
-        self.assertNotIn("Charlie Brown", anon_text)
+        self.assertNotIn("Contributor C", anon_text)
         self.assertNotIn("charlie@example.com", anon_text)
         self.assertIn("Author-", anon_text)
         self.assertIn("@privacy.local", anon_text)
@@ -188,7 +187,7 @@ class TestEndToEnd(unittest.TestCase):
             # Add .mailmap
             mm_file = os.path.join(mm_dir, ".mailmap")
             with open(mm_file, "w", encoding="utf-8") as f:
-                f.write("Jane Doe <jane@canonical.org> J. Doe <jdoe@legacy.org>\n")
+                f.write("Canonical contributor A <jane@canonical.example> Alias A <jdoe@legacy.example>\n")
 
             dummy_file = os.path.join(mm_dir, "test.py")
             with open(dummy_file, "w", encoding="utf-8") as f:
@@ -196,10 +195,10 @@ class TestEndToEnd(unittest.TestCase):
 
             _run(["add", "."])
             env = {
-                "GIT_AUTHOR_NAME": "J. Doe",
-                "GIT_AUTHOR_EMAIL": "jdoe@legacy.org",
-                "GIT_COMMITTER_NAME": "J. Doe",
-                "GIT_COMMITTER_EMAIL": "jdoe@legacy.org",
+                "GIT_AUTHOR_NAME": "Alias A",
+                "GIT_AUTHOR_EMAIL": "jdoe@legacy.example",
+                "GIT_COMMITTER_NAME": "Alias A",
+                "GIT_COMMITTER_EMAIL": "jdoe@legacy.example",
             }
             _run(["commit", "-m", "Commit by legacy alias"], env=env)
 
@@ -211,9 +210,9 @@ class TestEndToEnd(unittest.TestCase):
                 data = json.load(f)
 
             self.assertEqual(data["total_commits"], 1)
-            # Mailmap should resolve J. Doe -> Jane Doe
-            self.assertEqual(data["authors"][0]["name"], "Jane Doe")
-            self.assertEqual(data["authors"][0]["email"], "jane@canonical.org")
+            # Mailmap should resolve Alias A -> Canonical contributor A
+            self.assertEqual(data["authors"][0]["name"], "Canonical contributor A")
+            self.assertEqual(data["authors"][0]["email"], "jane@canonical.example")
 
 
 if __name__ == "__main__":

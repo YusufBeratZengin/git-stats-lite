@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import List
-
 from ..models import RepoReport
 
 
-def _num(n: int | float) -> str:
+def _num(n: float) -> str:
     if isinstance(n, float):
         return f"{n:,.1f}"
     return f"{n:,}"
@@ -15,7 +13,7 @@ def _num(n: int | float) -> str:
 
 def format_markdown_report(report: RepoReport, top_n: int = 15, timezone_mode: str = "local") -> str:
     """Render repository report as GitHub Flavored Markdown."""
-    lines: List[str] = []
+    lines: list[str] = []
 
     anon_badge = " *(anonymized)*" if report.is_anonymized else ""
     lines.append(f"# Git Stats Lite: {report.repo_name}{anon_badge}")
@@ -57,11 +55,11 @@ def format_markdown_report(report: RepoReport, top_n: int = 15, timezone_mode: s
     lines.append("")
     lines.append("| Author | Commits | % Commits | Added | Deleted | Net | Active Days |")
     lines.append("| :--- | ---: | ---: | ---: | ---: | ---: | ---: |")
-    for a in report.authors[:top_n]:
-        net = a.lines_added - a.lines_deleted
+    for author in report.authors[:top_n]:
+        net = author.lines_added - author.lines_deleted
         lines.append(
-            f"| {a.name} | {_num(a.commits_count)} | {a.percentage_commits:.1f}% | "
-            f"+{_num(a.lines_added)} | -{_num(a.lines_deleted)} | {_num(net)} | {a.active_days} |"
+            f"| {author.name} | {_num(author.commits_count)} | {author.percentage_commits:.1f}% | "
+            f"+{_num(author.lines_added)} | -{_num(author.lines_deleted)} | {_num(net)} | {author.active_days} |"
         )
     lines.append("")
 

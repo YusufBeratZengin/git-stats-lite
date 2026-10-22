@@ -3,12 +3,23 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
-from typing import Generator, List, Optional
+from collections.abc import Generator
+from contextlib import suppress
 
 
 class GitError(Exception):
     """Raised when a git command fails unexpectedly."""
+
+
+def _expand_relative_date(value: str) -> str:
+    """Translate CLI interval shorthand into Git's relative date syntax."""
+    match = re.fullmatch(r"(\d+)([ymwdh])", value)
+    if match is None:
+        return value
+    units = {"y": "years", "m": "months", "w": "weeks", "d": "days", "h": "hours"}
+    return f"{match[1]} {units[match[2]]} ago"
 
 
 def is_git_available() -> bool:
@@ -16,8 +27,7 @@ def is_git_available() -> bool:
     try:
         res = subprocess.run(
             ["git", "--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )
@@ -32,8 +42,7 @@ def is_git_repository(path: str = ".") -> bool:
         res = subprocess.run(
             ["git", "rev-parse", "--is-inside-work-tree"],
             cwd=path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )
@@ -48,8 +57,7 @@ def get_repo_root(path: str = ".") -> str:
         res = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
             cwd=path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=True,
         )
@@ -64,8 +72,7 @@ def get_current_branch(repo_path: str = ".") -> str:
         res = subprocess.run(
             ["git", "branch", "--show-current"],
             cwd=repo_path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )
@@ -76,22 +83,21 @@ def get_current_branch(repo_path: str = ".") -> str:
         res2 = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
             cwd=repo_path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )
         rev = res2.stdout.strip()
         return rev if rev else "HEAD"
-    except Exception:
+    except (OSError, UnicodeError):
         return "HEAD"
 
 
 def stream_git_log(
     repo_path: str,
-    since: Optional[str] = None,
-    until: Optional[str] = None,
-    revision: Optional[str] = None,
+    since: str | None = None,
+    until: str | None = None,
+    revision: str | None = None,
     all_branches: bool = False,
 ) -> Generator[str, None, None]:
     """Execute git log with streaming stdout.
@@ -99,7 +105,7 @@ def stream_git_log(
     Yields raw output lines from `git log --numstat --use-mailmap ...`.
     """
     format_spec = "@@@COMMIT@@@%x00%H%x00%aN%x00%aE%x00%aI%x00%at%x00%cI%x00%ct%x00%s"
-    cmd: List[str] = [
+    cmd: list[str] = [
         "git",
         "log",
         "--use-mailmap",
@@ -110,9 +116,9 @@ def stream_git_log(
     if all_branches:
         cmd.append("--all")
     if since:
-        cmd.append(f"--since={since}")
+        cmd.append(f"--since={_expand_relative_date(since)}")
     if until:
-        cmd.append(f"--until={until}")
+        cmd.append(f"--until={_expand_relative_date(until)}")
     if revision:
         cmd.append(revision)
 
@@ -129,22 +135,17 @@ def stream_git_log(
 
     try:
         if proc.stdout:
-            for line in proc.stdout:
-                yield line
+            yield from proc.stdout
     finally:
         if proc.stdout:
-            try:
+            with suppress(OSError, ValueError):
                 proc.stdout.close()
-            except Exception:
-                pass
 
     stderr_output = ""
     if proc.stderr:
-        try:
+        with suppress(OSError, ValueError):
             stderr_output = proc.stderr.read()
             proc.stderr.close()
-        except Exception:
-            pass
     proc.wait()
 
     if proc.returncode != 0:

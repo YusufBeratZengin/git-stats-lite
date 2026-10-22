@@ -6,7 +6,6 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional
 
 if __package__ is None or __package__ == "":
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -176,7 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """CLI main execution function."""
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -238,7 +237,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     except GitError as e:
         sys.stderr.write(f"Git error: {e}\n")
         return 1
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- CLI boundary reports analysis failures to the user.
         sys.stderr.write(f"Error: Unexpected error during analysis: {e}\n")
         return 1
 
@@ -248,7 +247,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     # Handle dedicated file exports if flags like --html <file>, --json <file>, --markdown <file> are used
-    saved_files: List[str] = []
+    saved_files: list[str] = []
 
     if isinstance(args.html, str):
         html_out = format_html_report(report, top_n=args.top, timezone_mode=args.tz)

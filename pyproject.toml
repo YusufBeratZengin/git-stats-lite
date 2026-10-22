@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,9 +7,10 @@ name = "git-stats-lite"
 version = "0.1.0"
 description = "Fast, private repository statistics from local git history"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    { name = "Yusuf Berat Zengin", email = "118852217+YusufBeratZengin@users.noreply.github.com" }
+    { name = "Yusuf Berat Zengin" }
 ]
 requires-python = ">=3.10"
 keywords = [
@@ -22,9 +23,8 @@ keywords = [
     "privacy",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -34,7 +34,12 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Version Control :: Git",
     "Topic :: Utilities",
+    "Typing :: Typed",
 ]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.9", "mypy>=1.14", "build>=1.2", "twine>=6"]
 
 [project.urls]
 Homepage = "https://github.com/YusufBeratZengin/git-stats-lite"
@@ -48,3 +53,13 @@ git-stats-lite = "git_stats_lite.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+git_stats_lite = ["py.typed"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

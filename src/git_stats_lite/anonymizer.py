@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Dict, Tuple
 
 
 class Anonymizer:
@@ -11,8 +10,8 @@ class Anonymizer:
 
     def __init__(self, salt: str = "git-stats-lite-salt") -> None:
         self.salt = salt
-        self._name_map: Dict[str, str] = {}
-        self._email_map: Dict[str, str] = {}
+        self._name_map: dict[str, str] = {}
+        self._email_map: dict[str, str] = {}
 
     def _hash_token(self, value: str) -> str:
         """Create a short 8-hex-character hash from a string value."""
@@ -23,7 +22,7 @@ class Anonymizer:
         hasher.update(norm.encode("utf-8"))
         return hasher.hexdigest()[:8]
 
-    def anonymize_author(self, name: str, email: str) -> Tuple[str, str]:
+    def anonymize_author(self, name: str, email: str) -> tuple[str, str]:
         """Return (anonymized_name, anonymized_email).
 
         The identity is keyed by the normalized email if present, or by name.

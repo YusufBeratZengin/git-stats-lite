@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Dict, Generator, Iterable, Optional, Tuple
+from collections.abc import Generator, Iterable
 
 from .models import CommitInfo, FileDiff
 
@@ -42,7 +42,7 @@ def resolve_rename_path(path: str) -> str:
     if "=>" not in path:
         return path
 
-    def _replace_braces(match: re.Match) -> str:
+    def _replace_braces(match: re.Match[str]) -> str:
         parts = match.group(1).split("=>")
         if len(parts) >= 2:
             return parts[1].strip()
@@ -65,12 +65,12 @@ class MailmapLookup:
 
     def __init__(self) -> None:
         # Key: (commit_name_lower, commit_email_lower) or ("", commit_email_lower)
-        self._exact_map: Dict[Tuple[str, str], Tuple[str, str]] = {}
-        self._email_map: Dict[str, Tuple[str, str]] = {}
-        self._name_map: Dict[str, Tuple[str, str]] = {}
+        self._exact_map: dict[tuple[str, str], tuple[str, str]] = {}
+        self._email_map: dict[str, tuple[str, str]] = {}
+        self._name_map: dict[str, tuple[str, str]] = {}
 
     @classmethod
-    def from_file(cls, path: str) -> "MailmapLookup":
+    def from_file(cls, path: str) -> MailmapLookup:
         lookup = cls()
         if not os.path.isfile(path):
             return lookup
@@ -114,7 +114,7 @@ class MailmapLookup:
             # Proper Name <commit@email>
             self._name_map[proper_email.lower()] = (proper_name, proper_email)
 
-    def lookup(self, name: str, email: str) -> Tuple[str, str]:
+    def lookup(self, name: str, email: str) -> tuple[str, str]:
         """Resolve an author name and email to their canonical identity."""
         n_low = name.strip().lower()
         e_low = email.strip().lower()
@@ -137,9 +137,9 @@ class MailmapLookup:
         return (name, email)
 
 
-def parse_git_log_stream(lines: Iterable[str], mailmap: Optional[MailmapLookup] = None) -> Generator[CommitInfo, None, None]:
+def parse_git_log_stream(lines: Iterable[str], mailmap: MailmapLookup | None = None) -> Generator[CommitInfo, None, None]:
     """Parse git log stream lines into CommitInfo records on the fly."""
-    current_commit: Optional[CommitInfo] = None
+    current_commit: CommitInfo | None = None
 
     for raw_line in lines:
         line = raw_line.rstrip("\r\n")

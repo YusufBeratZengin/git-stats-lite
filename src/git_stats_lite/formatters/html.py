@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import html
-from typing import Dict, List
 
 from ..models import ActivityHeatmap, RepoReport
 
 
-def _esc(val: str | int | float) -> str:
+def _esc(val: str | float) -> str:
     """HTML escape string."""
     return html.escape(str(val))
 
 
-def _num(val: int | float) -> str:
+def _num(val: float) -> str:
     """Format number with thousands separator."""
     if isinstance(val, float):
         return f"{val:,.1f}"
@@ -75,7 +74,7 @@ def _generate_svg_heatmap(heatmap: ActivityHeatmap) -> str:
     return "\n".join(svg_parts)
 
 
-def _generate_svg_weekly_timeline(commits_by_week: Dict[str, int]) -> str:
+def _generate_svg_weekly_timeline(commits_by_week: dict[str, int]) -> str:
     """Generate inline SVG bar timeline of commits per week."""
     if not commits_by_week:
         return '<p class="empty-state">No timeline activity to display.</p>'
@@ -669,6 +668,7 @@ footer {{
     </div>
     <div class="meta-info">
       Branch: <strong>{_esc(report.branch)}</strong> &bull; Generated: {_esc(report.generated_at[:19].replace('T', ' '))} UTC
+      <br>Date range: {_esc(first_d)} to {_esc(last_d)}
     </div>
   </header>
 

@@ -41,7 +41,7 @@ class TestFormatters(unittest.TestCase):
             active_days_count=5,
             authors=[
                 AuthorStats(
-                    name="Alice",
+                    name="Contributor A",
                     email="alice@example.com",
                     canonical_email="alice@example.com",
                     commits_count=10,
@@ -55,7 +55,7 @@ class TestFormatters(unittest.TestCase):
                     percentage_lines=77.78,
                 ),
                 AuthorStats(
-                    name="Bob",
+                    name="Contributor B",
                     email="bob@example.com",
                     canonical_email="bob@example.com",
                     commits_count=5,
@@ -87,10 +87,10 @@ class TestFormatters(unittest.TestCase):
                 total_lines_in_window=180,
                 bus_factor_50=1,
                 bus_factor_80=2,
-                authors_50=[BusFactorAuthor(name="Alice", email="alice@example.com", lines_changed=140, percentage=77.8)],
+                authors_50=[BusFactorAuthor(name="Contributor A", email="alice@example.com", lines_changed=140, percentage=77.8)],
                 authors_80=[
-                    BusFactorAuthor(name="Alice", email="alice@example.com", lines_changed=140, percentage=77.8),
-                    BusFactorAuthor(name="Bob", email="bob@example.com", lines_changed=40, percentage=22.2),
+                    BusFactorAuthor(name="Contributor A", email="alice@example.com", lines_changed=140, percentage=77.8),
+                    BusFactorAuthor(name="Contributor B", email="bob@example.com", lines_changed=40, percentage=22.2),
                 ],
             ),
             is_anonymized=False,
@@ -102,7 +102,7 @@ class TestFormatters(unittest.TestCase):
         self.assertIn("GIT STATS LITE: demo-repo", text)
         self.assertIn("Total Commits     : 15", text)
         self.assertIn("Bus Factor (50%)  : 1 author(s)", text)
-        self.assertIn("Alice", text)
+        self.assertIn("Contributor A", text)
         self.assertIn("Python", text)
         self.assertIn("src/main.py", text)
 
@@ -120,7 +120,7 @@ class TestFormatters(unittest.TestCase):
         self.assertIn("# Git Stats Lite: demo-repo", md)
         self.assertIn("## Repository Overview", md)
         self.assertIn("## Bus Factor", md)
-        self.assertIn("| Alice |", md)
+        self.assertIn("| Contributor A |", md)
         self.assertIn("| Python |", md)
 
     def test_html_report_self_contained(self):
@@ -132,6 +132,7 @@ class TestFormatters(unittest.TestCase):
         self.assertIn("author-svg", html_out)
         self.assertIn("lang-bar-svg", html_out)
         self.assertIn("prefers-color-scheme: dark", html_out)
+        self.assertIn("Date range: 2026-01-01 to 2026-05-01", html_out)
 
         # Zero external scripts, fonts or cdns
         self.assertNotIn("http://", html_out)

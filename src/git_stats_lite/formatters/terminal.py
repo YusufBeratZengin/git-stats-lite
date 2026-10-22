@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-from typing import List
-
 from ..models import ActivityHeatmap, RepoReport
 
 
-def _format_num(n: int | float) -> str:
+def _format_num(n: float) -> str:
     """Format number with thousands comma separator."""
     if isinstance(n, float):
         return f"{n:,.1f}"
     return f"{n:,}"
 
 
-def _format_table(headers: List[str], rows: List[List[str]], alignments: List[str]) -> str:
+def _format_table(headers: list[str], rows: list[list[str]], alignments: list[str]) -> str:
     """Render a clean text table with headers, borders, and column alignments."""
     if not headers:
         return ""
@@ -87,7 +85,7 @@ def _render_ascii_heatmap(heatmap: ActivityHeatmap) -> str:
 
 def format_terminal_report(report: RepoReport, top_n: int = 10, timezone_mode: str = "local") -> str:
     """Format full repository report for terminal display."""
-    output_parts: List[str] = []
+    output_parts: list[str] = []
 
     # Title & Overview Card
     title = f"GIT STATS LITE: {report.repo_name}"
