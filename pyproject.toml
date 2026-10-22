@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "git-stats-lite"
+version = "0.1.0"
+description = "Fast, private repository statistics from local git history"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Yusuf Berat Zengin", email = "118852217+YusufBeratZengin@users.noreply.github.com" }
+]
+requires-python = ">=3.10"
+keywords = [
+    "git",
+    "git-stats",
+    "repository-metrics",
+    "heatmap",
+    "bus-factor",
+    "code-churn",
+    "privacy",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/YusufBeratZengin/git-stats-lite"
+Repository = "https://github.com/YusufBeratZengin/git-stats-lite"
+Issues = "https://github.com/YusufBeratZengin/git-stats-lite/issues"
+Changelog = "https://github.com/YusufBeratZengin/git-stats-lite/blob/main/CHANGELOG.md"
+
+[project.scripts]
+git-stats = "git_stats_lite.cli:main"
+git-stats-lite = "git_stats_lite.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

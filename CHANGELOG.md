@@ -1,0 +1,23 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-10-22
+
+### Added
+
+- Streaming git log parser using `git log --numstat --format=...` via subprocess with zero external runtime dependencies.
+- Author metrics aggregation with `.mailmap` support and email normalization (resolves GitHub and GitLab noreply aliases).
+- Weekday-hour 7x24 commit activity heatmap supporting both local author timezone and UTC.
+- Commits per day and per week historical trends.
+- File churn and hotspot score calculations (`changes * size`).
+- Programming language breakdown based on file extension and special filenames.
+- Bus factor risk assessment calculating the minimum contributors covering 50% and 80% of lines changed within a configurable month window.
+- Multiple report formats: formatted terminal tables, structured JSON, GitHub Flavored Markdown, and standalone single-file HTML.
+- Self-contained HTML report with responsive inline SVG charts (heatmap, commit timeline, top authors, language distribution) and light/dark theme support.
+- Privacy mode (`--anonymize`) providing deterministic SHA-256 pseudonymization of author names and email addresses.
+- Command-line interface with options `--since`, `--until`, `--branch`, `--all`, `--html`, `--json`, `--markdown`, `--format`, `--output`, `--anonymize`, `--bus-factor-months`, `--top`, and `--tz`.
+- Comprehensive test suite covering units and end-to-end scripted git repository workflows.
