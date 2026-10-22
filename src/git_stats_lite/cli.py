@@ -5,26 +5,48 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 from typing import List, Optional
 
-from . import __version__
-from .anonymizer import Anonymizer
-from .formatters import (
-    format_html_report,
-    format_json_report,
-    format_markdown_report,
-    format_terminal_report,
-)
-from .git import (
-    GitError,
-    get_current_branch,
-    get_repo_root,
-    is_git_available,
-    is_git_repository,
-    stream_git_log,
-)
-from .parser import MailmapLookup, parse_git_log_stream
-from .stats import StatsAggregator
+if __package__ is None or __package__ == "":
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from git_stats_lite import __version__
+    from git_stats_lite.anonymizer import Anonymizer
+    from git_stats_lite.formatters import (
+        format_html_report,
+        format_json_report,
+        format_markdown_report,
+        format_terminal_report,
+    )
+    from git_stats_lite.git import (
+        GitError,
+        get_current_branch,
+        get_repo_root,
+        is_git_available,
+        is_git_repository,
+        stream_git_log,
+    )
+    from git_stats_lite.parser import MailmapLookup, parse_git_log_stream
+    from git_stats_lite.stats import StatsAggregator
+else:
+    from . import __version__
+    from .anonymizer import Anonymizer
+    from .formatters import (
+        format_html_report,
+        format_json_report,
+        format_markdown_report,
+        format_terminal_report,
+    )
+    from .git import (
+        GitError,
+        get_current_branch,
+        get_repo_root,
+        is_git_available,
+        is_git_repository,
+        stream_git_log,
+    )
+    from .parser import MailmapLookup, parse_git_log_stream
+    from .stats import StatsAggregator
 
 
 def build_parser() -> argparse.ArgumentParser:
