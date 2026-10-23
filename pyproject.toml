@@ -39,7 +39,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.9", "mypy>=1.14", "build>=1.2", "twine>=6"]
+dev = ["pytest>=8", "pytest-cov>=4.0", "ruff>=0.9", "mypy>=1.14", "build>=1.2", "twine>=6"]
 
 [project.urls]
 Homepage = "https://github.com/YusufBeratZengin/git-stats-lite"
@@ -63,3 +63,4 @@ strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=git_stats_lite --cov-report=term-missing"

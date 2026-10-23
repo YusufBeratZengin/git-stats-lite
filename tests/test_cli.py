@@ -1,17 +1,20 @@
 """Unit tests for CLI parser and error conditions."""
 
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from git_stats_lite.cli import build_parser, main
+from git_stats_lite.git import GitError
 
 
 class TestCLI(unittest.TestCase):
-    def test_parser_defaults(self):
+    def test_parser_defaults(self) -> None:
         parser = build_parser()
         args = parser.parse_args([])
         self.assertEqual(args.path, ".")
@@ -21,7 +24,7 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(args.tz, "local")
         self.assertFalse(args.anonymize)
 
-    def test_parser_custom_args(self):
+    def test_parser_custom_args(self) -> None:
         parser = build_parser()
         args = parser.parse_args([
             "/repo",
@@ -44,14 +47,101 @@ class TestCLI(unittest.TestCase):
         self.assertTrue(args.anonymize)
         self.assertEqual(args.html, "report.html")
 
-    def test_nonexistent_path(self):
+    def test_version_flag(self) -> None:
+        with self.assertRaises(SystemExit) as cm:
+            main(["--version"])
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_nonexistent_path(self) -> None:
         exit_code = main(["/path/that/does/not/exist/anywhere"])
         self.assertEqual(exit_code, 1)
 
-    def test_non_git_directory(self):
+    def test_non_git_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             exit_code = main([tmpdir])
             self.assertEqual(exit_code, 1)
+
+    def test_git_unavailable(self) -> None:
+        with patch("git_stats_lite.cli.is_git_available", return_value=False):
+            self.assertEqual(main(["."]), 1)
+
+    def test_git_repo_root_error(self) -> None:
+        with patch("git_stats_lite.cli.get_repo_root", side_effect=GitError("root error")):
+            self.assertEqual(main(["."]), 1)
+
+    def test_git_analysis_git_error(self) -> None:
+        with patch("git_stats_lite.cli.stream_git_log", side_effect=GitError("log error")):
+            self.assertEqual(main(["."]), 1)
+
+    def test_git_analysis_unexpected_error(self) -> None:
+        with patch("git_stats_lite.cli.stream_git_log", side_effect=RuntimeError("unexpected")):
+            self.assertEqual(main(["."]), 1)
+
+    def test_mailmap_missing_warning(self) -> None:
+        # Should warn to stderr but proceed
+        exit_code = main([".", "--mailmap", "/nonexistent/mailmap.txt", "--top", "1"])
+        self.assertEqual(exit_code, 0)
+
+    def test_mailmap_existing_file(self) -> None:
+        with tempfile.NamedTemporaryFile("w", delete=False) as f:
+            f.write("Canonical <can@example.com> <old@example.com>\n")
+            f_path = f.name
+        try:
+            exit_code = main([".", "--mailmap", f_path, "--top", "1"])
+            self.assertEqual(exit_code, 0)
+        finally:
+            if os.path.exists(f_path):
+                os.remove(f_path)
+
+    def test_exports_and_formats(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html_file = os.path.join(tmpdir, "out.html")
+            json_file = os.path.join(tmpdir, "out.json")
+            md_file = os.path.join(tmpdir, "out.md")
+            out_file = os.path.join(tmpdir, "terminal.txt")
+
+            exit_code = main([
+                ".",
+                "--html", html_file,
+                "--json", json_file,
+                "--markdown", md_file,
+                "-o", out_file,
+                "--anonymize",
+                "--top", "3",
+            ])
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(os.path.isfile(html_file))
+            self.assertTrue(os.path.isfile(json_file))
+            self.assertTrue(os.path.isfile(md_file))
+            self.assertTrue(os.path.isfile(out_file))
+
+    def test_direct_format_flags(self) -> None:
+        # Test --json stdout flag
+        self.assertEqual(main([".", "--json", "--top", "2"]), 0)
+        # Test --markdown stdout flag
+        self.assertEqual(main([".", "--markdown", "--top", "2"]), 0)
+        # Test --html stdout flag
+        self.assertEqual(main([".", "--html", "--top", "2"]), 0)
+        # Test format flag directly
+        self.assertEqual(main([".", "--format", "json", "--top", "2"]), 0)
+        self.assertEqual(main([".", "--format", "markdown", "--top", "2"]), 0)
+        self.assertEqual(main([".", "--format", "html", "--top", "2"]), 0)
+
+    def test_file_write_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Use an invalid path (directory where file expected) to trigger OSError
+            bad_path = os.path.join(tmpdir, "nonexistent_sub", "file.out")
+            self.assertEqual(main([".", "--html", bad_path]), 1)
+            self.assertEqual(main([".", "--json", bad_path]), 1)
+            self.assertEqual(main([".", "--markdown", bad_path]), 1)
+            self.assertEqual(main([".", "-o", bad_path]), 1)
+
+    def test_main_module_execution(self) -> None:
+        import runpy
+        with patch.object(sys, "argv", ["git-stats", "--help"]):
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_module("git_stats_lite", run_name="__main__")
+            self.assertEqual(cm.exception.code, 0)
 
 
 if __name__ == "__main__":
