@@ -115,3 +115,42 @@ class TestGit(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNonAsciiPaths(unittest.TestCase):
+    def test_repo_root_and_branch_survive_non_ascii_directory(self) -> None:
+        import subprocess
+        import tempfile
+
+        with tempfile.TemporaryDirectory(prefix="gsl-") as base:
+            repo = Path(base) / "proje ğüşiöç"
+            repo.mkdir()
+            env = {**os.environ, "GIT_AUTHOR_NAME": "A", "GIT_AUTHOR_EMAIL": "a@x.test",
+                   "GIT_COMMITTER_NAME": "A", "GIT_COMMITTER_EMAIL": "a@x.test"}
+            subprocess.run(["git", "init", "-q", "-b", "ana"], cwd=repo, check=True)
+            (repo / "a.txt").write_text("x", encoding="utf-8")
+            subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+            subprocess.run(["git", "commit", "-qm", "x"], cwd=repo, check=True, env=env,
+                           capture_output=True)
+            root = get_repo_root(str(repo))
+            self.assertTrue(os.path.samefile(root, repo))
+            self.assertEqual(get_current_branch(root), "ana")
+
+
+class TestQuotePath(unittest.TestCase):
+    def test_non_ascii_file_names_are_not_octal_quoted(self) -> None:
+        import subprocess
+        import tempfile
+
+        with tempfile.TemporaryDirectory(prefix="gsl-") as base:
+            repo = Path(base)
+            env = {**os.environ, "GIT_AUTHOR_NAME": "A", "GIT_AUTHOR_EMAIL": "a@x.test",
+                   "GIT_COMMITTER_NAME": "A", "GIT_COMMITTER_EMAIL": "a@x.test"}
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "çalışma notu.txt").write_text("x", encoding="utf-8")
+            subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+            subprocess.run(["git", "commit", "-qm", "x"], cwd=repo, check=True, env=env,
+                           capture_output=True)
+            output = "".join(stream_git_log(str(repo)))
+            self.assertIn("çalışma notu.txt", output)
+            self.assertNotIn('"', output.split("\n", 2)[-1])

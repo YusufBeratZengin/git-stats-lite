@@ -29,6 +29,8 @@ def is_git_available() -> bool:
             ["git", "--version"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False,
         )
         return res.returncode == 0
@@ -44,6 +46,8 @@ def is_git_repository(path: str = ".") -> bool:
             cwd=path,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False,
         )
         return res.returncode == 0 and res.stdout.strip() == "true"
@@ -59,6 +63,8 @@ def get_repo_root(path: str = ".") -> str:
             cwd=path,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
         return os.path.abspath(res.stdout.strip())
@@ -74,6 +80,8 @@ def get_current_branch(repo_path: str = ".") -> str:
             cwd=repo_path,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False,
         )
         branch = res.stdout.strip()
@@ -85,6 +93,8 @@ def get_current_branch(repo_path: str = ".") -> str:
             cwd=repo_path,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False,
         )
         rev = res2.stdout.strip()
@@ -107,6 +117,8 @@ def stream_git_log(
     format_spec = "@@@COMMIT@@@%x00%H%x00%aN%x00%aE%x00%aI%x00%at%x00%cI%x00%ct%x00%s"
     cmd: list[str] = [
         "git",
+        "-c",
+        "core.quotepath=false",
         "log",
         "--use-mailmap",
         "--numstat",
