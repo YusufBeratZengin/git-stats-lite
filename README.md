@@ -1,140 +1,129 @@
 # git-stats-lite
-[![CI](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/git-stats-lite)](https://pypi.org/project/git-stats-lite/) [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Dependencies](https://img.shields.io/badge/runtime_dependencies-0-green)
 
-Local Git history statistics: activity, authors, churn, languages, and bus factor.
-Runs offline with zero runtime dependencies; includes a self-contained HTML report.
-From a source checkout: `python -m pip install .`
-Try it: `python src/git_stats_lite/cli.py . --since 1y --anonymize`
+[![CI](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/git-stats-lite.svg)](https://pypi.org/project/git-stats-lite/)
+[![Python Version](https://img.shields.io/badge/python-%3E%3D3.10-3776ab.svg?logo=python&logoColor=white)](https://pypi.org/project/git-stats-lite/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](pyproject.toml)
+
+> Fast, private repository statistics and bus factor insights from local git history.
 
 [English](README.md) | [Türkçe](README.tr.md)
 
-## Features
+<p align="center">
+  <img src="docs/demo.svg" alt="git-stats-lite terminal demo" width="720">
+</p>
 
-- Streaming `git log --numstat` parsing with `.mailmap` and noreply alias normalization.
-- Daily/weekly commit counts, 7x24 weekday-hour heatmaps in author local time or UTC, first/last dates.
-- Author totals, file churn and hotspots, language breakdown by extension and special filename.
-- Minimum authors covering 50%/80% of changed lines in a configurable bus factor window.
-- Terminal, JSON, Markdown, and single-file HTML with inline SVG and automatic light/dark themes.
-- `--anonymize` replaces author names/emails with deterministic SHA-256 pseudonyms.
+## Why git-stats-lite?
 
-## Demo
+- **Zero runtime dependencies & 100% offline**: Runs entirely against your local git clone via native subprocess streaming. No network calls, no cloud services, no tracking, and no external libraries required.
+- **Actionable health & bus factor metrics**: Computes 50% and 80% bus factor risk windows, identifies code churn hotspots (`changes * size`), and maps 7x24 weekday-hour activity patterns in author local time or UTC.
+- **Multi-format portable exports**: Generates terminal tables, machine-readable JSON, GitHub Flavored Markdown, and standalone single-file HTML reports with self-contained, responsive inline SVG charts (light and dark mode supported).
 
-Actual output from the synthetic offline example:
+## Quick Start
+
+Run instantly from your checkout with Python 3.10+ (no package installation required):
 
 ```sh
-python examples/demo.py
+# Clone and analyze right away
+git clone https://github.com/YusufBeratZengin/git-stats-lite.git
+cd git-stats-lite
+python src/git_stats_lite/cli.py . --top 5
 ```
 
-```text
-Commits: 2; authors: 2
-Lines: +12 / -3
-Language: Python
-Bus factor: 50%=1, 80%=2
-UTC activity: Monday 10:00=1, Tuesday 12:00=1
-```
-
-## Install
-
-Requires Python 3.10+ and Git on PATH. From a source checkout:
+Or install locally with pip:
 
 ```sh
 python -m pip install .
+git-stats . --top 5
 ```
-
-This is a source installation; the PyPI badge reflects any published release.
-The installed commands are `git-stats` and `git-stats-lite`.
-You can also run `python src/git_stats_lite/cli.py` directly from the checkout.
 
 ## Usage
 
+### Command Line Interface
+
 ```sh
-python src/git_stats_lite/cli.py . --since 1y --anonymize
-python src/git_stats_lite/cli.py . --tz utc --format json --anonymize
-python src/git_stats_lite/cli.py . --anonymize --html is/report.html
-python src/git_stats_lite/cli.py . --anonymize --markdown is/summary.md
+# Analyze the last 1 year with author privacy anonymization
+git-stats . --since 1y --anonymize
+
+# Export to standalone single-file HTML with interactive SVG charts
+git-stats . --html report.html
+
+# Export to Markdown summary and raw JSON data
+git-stats . --markdown summary.md --json stats.json
+
+# View activity heatmap in UTC timezone
+git-stats . --tz utc --top 5
+
+# Analyze a specific branch or revision
+git-stats . --branch main --since 6m
 ```
 
-Create the output directory before exporting. After installation, replace
-`python src/git_stats_lite/cli.py` with `git-stats` or `python -m git_stats_lite`.
+> **Tip:** You can run `python src/git_stats_lite/cli.py` or `python -m git_stats_lite` directly before installing.
 
-Python API (after installation):
+### Python API
 
 ```python
 from git_stats_lite.git import stream_git_log
 from git_stats_lite.parser import parse_git_log_stream
 from git_stats_lite.stats import StatsAggregator
 
+# Aggregate metrics from git history stream
 stats = StatsAggregator(repo_path=".", timezone_mode="utc")
 stats.process_all(parse_git_log_stream(stream_git_log(".", since="1y")))
 report = stats.generate_report()
-print(report.total_commits)
+
+print(f"Total Commits: {report.total_commits}")
+print(f"Bus Factor (50%): {report.bus_factor.bus_factor_50}")
 ```
 
-## Examples
+## Configuration
 
-[examples/demo.py](examples/demo.py) feeds synthetic log records through the actual
-parser and aggregator. It needs no installation, network, or Git history changes.
+| Option | Description | Default |
+| --- | --- | --- |
+| `path` | Repository path or subdirectory | `.` |
+| `--since DATE`, `--until DATE` | Git dates or relative intervals (e.g., `1y`, `6m`, `30d`) | `None` |
+| `--branch REV`, `--rev REV` | Branch, tag, or revision to inspect | Active branch |
+| `--all` | Include all refs in analysis | `false` |
+| `--format {terminal,json,markdown,html}` | Primary output format | `terminal` |
+| `-o FILE`, `--output FILE` | Write primary output to destination file | stdout |
+| `--html [FILE]` | Generate self-contained HTML report (to file or stdout) | `None` |
+| `--json [FILE]` | Export structured JSON data (to file or stdout) | `None` |
+| `--markdown [FILE]`, `--md [FILE]` | Export GitHub Flavored Markdown summary | `None` |
+| `--anonymize` | Pseudonymize contributor names and emails with SHA-256 | `false` |
+| `--bus-factor-months N` | Time window in months for bus factor analysis (`0` = all history) | `6` |
+| `--top N` | Number of rows to display in summary tables | `10` |
+| `--tz {local,utc}` | Timezone calculation mode for 7x24 activity heatmap | `local` |
+| `--mailmap FILE` | Path to additional custom mailmap mapping file | `None` |
+| `--version`, `-h`, `--help` | Display version or help message | |
 
-## Configuration / options
+## FAQ & Limitations
 
-| Option | Description |
-| --- | --- |
-| `path` | Repository or subdirectory; default `.` |
-| `--since DATE`, `--until DATE` | Git dates or intervals such as `1y`, `6m`; `m` means months |
-| `--branch REV`, `--rev REV` | Branch, tag, or revision |
-| `--all` | Include all refs |
-| `--format {terminal,json,markdown,html}` | Primary format; default terminal (choose one value) |
-| `-o FILE`, `--output FILE` | Save primary output |
-| `--html [FILE]`, `--json [FILE]` | Export to a file, or stdout without FILE |
-| `--markdown [FILE]`, `--md [FILE]` | Markdown export |
-| `--anonymize` | Hash author names and emails |
-| `--bus-factor-months N` | Window in months; default 6, 0 means all history |
-| `--top N` | Table row limit; default 10 |
-| `--tz {local,utc}` | Activity timezone; default local (choose one value) |
-| `--mailmap FILE` | Additional custom mailmap |
-| `--version`, `-h`, `--help` | Version or help |
-
-## How it works
-
-Git applies the repository mailmap, then the parser applies an optional custom
-mailmap. Metrics accumulate while log records stream through the parser.
-Memory grows with authors, files, days, and compact per-commit bus factor records.
-Hotspots use changed lines * current working-tree line count; missing or empty
-files fall back to commit count * changed lines. Languages describe history churn,
-not the current source tree. Reports require no external assets or JavaScript libraries.
-
-## Limitations / privacy
-
-"Local" means each author's recorded timezone, not the viewer's timezone.
-The bus factor window ends at the newest analyzed commit and approximates each
-month as 30.4375 days. If its window has no changed lines, it falls back to all
-analyzed changes, then commit counts when all diffs are zero. Binary diffs count
-as zero lines. Merge diffs follow Git's default log behavior.
-
-No repository data is sent over the network. Pseudonyms use a fixed salt and are
-linkable across reports; hashing does not guarantee anonymity. Repository names,
-absolute paths, branches, and file paths remain visible with `--anonymize`.
-Review every exported report before sharing. Use synthetic repositories in bug reports.
-
-## Development
-
-```sh
-python -m pip install -e ".[dev]"
-python -m ruff check .
-python -m mypy src
-python -m pytest -q
-python -m build
-python -m twine check dist/*
-```
-
-CI checks Python 3.10-3.13 on Windows and Linux. Tests run offline with scripted
-commits in temporary repositories. Build tools are development dependencies only.
+- **How is the Bus Factor calculated?**
+  The bus factor window defaults to the most recent 6 months ending at the latest analyzed commit. Contributors are ranked by changed lines (additions + deletions). The bus factor represents the minimal set of contributors responsible for 50% and 80% of lines churned. If all diffs are zero, it gracefully falls back to commit counts.
+- **What does `--anonymize` do and what are its boundaries?**
+  Author names and email addresses are pseudonymized using deterministic salted SHA-256 hashes (`Author-xxxxxxxx`). While personal names and emails are masked, repo metadata, file paths, and commit timestamps remain visible.
+- **What timezone is used for heatmaps?**
+  In `--tz local` mode, each commit uses the local timezone recorded by Git when the commit was authored. In `--tz utc` mode, timestamps are converted to UTC for global team comparison.
+- **Does it work on shallow clones?**
+  Yes, but statistics reflect only the fetched history depth. For complete history, ensure `git fetch --unshallow` is run first.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
-and [SECURITY.md](SECURITY.md). Release automation uses PyPI trusted publishing;
-a maintainer must configure the publisher and protected `pypi` environment first.
+Contributions, bug reports, and suggestions are welcome!
+Please review [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md).
+
+For development:
+
+```sh
+# Clone repository and install dev dependencies
+python -m pip install -e ".[dev]"
+
+# Run linter, typecheck, and test suite with coverage
+python -m ruff check .
+python -m mypy src
+python -m pytest
+```
 
 ## License
 

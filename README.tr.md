@@ -1,143 +1,130 @@
 # git-stats-lite
-[![CI](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/git-stats-lite)](https://pypi.org/project/git-stats-lite/) [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Dependencies](https://img.shields.io/badge/runtime_dependencies-0-green)
 
-Yerel Git geçmişinden aktivite, katkıcı, dosya değişimi, dil ve bus factor istatistikleri çıkarır.
-Çevrimdışı çalışır, runtime bağımlılığı yoktur; tek dosyalık HTML raporu üretir.
-Kaynak kod dizininde kurulum: `python -m pip install .`
-Denemek için: `python src/git_stats_lite/cli.py . --since 1y --anonymize`
+[![CI](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/YusufBeratZengin/git-stats-lite/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/git-stats-lite.svg)](https://pypi.org/project/git-stats-lite/)
+[![Python Version](https://img.shields.io/badge/python-%3E%3D3.10-3776ab.svg?logo=python&logoColor=white)](https://pypi.org/project/git-stats-lite/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](pyproject.toml)
+
+> Yerel Git geçmişinden hızlı, gizlilik odaklı istatistikler ve bus factor risk analizleri.
 
 [English](README.md) | [Türkçe](README.tr.md)
 
-## Özellikler
+<p align="center">
+  <img src="docs/demo.svg" alt="git-stats-lite terminal demosu" width="720">
+</p>
 
-- `git log --numstat` çıktısını akış halinde ayrıştırma; `.mailmap` ve noreply takma adlarını birleştirme.
-- Günlük/haftalık commit sayıları, yazarın yerel saatinde veya UTC'de 7x24 aktivite haritası, ilk/son commit tarihleri.
-- Katkıcı toplamları, dosya değişim yoğunluğu ve hotspot sıralaması, uzantı ve özel dosya adına göre dil dağılımı.
-- Seçilen bus factor penceresinde değişen satırların %50/%80'ini karşılayan en az katkıcı sayısı.
-- Terminal, JSON, Markdown ve dahili SVG grafikleriyle otomatik açık/koyu temalı tek dosya HTML çıktısı.
-- `--anonymize` ile yazar adları ve e-postaları yerine tutarlı SHA-256 takma kimlikler.
+## Neden git-stats-lite?
 
-## Demo
+- **Sıfır çalışma zamanı bağımlılığı ve %100 çevrimdışı**: Tamamen yerel Git kopyanız üzerinde alt süreç akışıyla (subprocess streaming) çalışır. Ağ çağrısı, bulut servisi, izleme kodu veya harici kütüphane gerektirmez.
+- **Eyleme dönüştürülebilir sağlık ve bus factor metrikleri**: %50 ve %80 bus factor risk pencerelerini hesaplar, kod değişim yoğunluğunu (`değişim * boyut`) tespit eder ve yazarın yerel saatine veya UTC'ye göre 7x24 haftalık aktivite haritası sunar.
+- **Farklı formatlarda taşınabilir dışa aktarma**: Terminal tabloları, makine tarafından okunabilir JSON, GitHub uyumlu Markdown ve harici JavaScript/CSS gerektirmeyen gömülü SVG grafikli bağımsız tek dosya HTML raporları üretir.
 
-Sentetik verilerle çalışan çevrimdışı örneğin gerçek çıktısı:
+## Hızlı Başlangıç
+
+Python 3.10+ yüklü ortamda paketi kurmadan doğrudan kaynak koddan çalıştırabilirsiniz:
 
 ```sh
-python examples/demo.py
+# Depoyu klonlayıp hemen analiz edin
+git clone https://github.com/YusufBeratZengin/git-stats-lite.git
+cd git-stats-lite
+python src/git_stats_lite/cli.py . --top 5
 ```
 
-```text
-Commits: 2; authors: 2
-Lines: +12 / -3
-Language: Python
-Bus factor: 50%=1, 80%=2
-UTC activity: Monday 10:00=1, Tuesday 12:00=1
-```
-
-## Kurulum
-
-Python 3.10+ ve PATH üzerinde Git gerekir. Kaynak kod dizininde:
+Veya pip ile yerel olarak kurun:
 
 ```sh
 python -m pip install .
+git-stats . --top 5
 ```
-
-Bu komut kaynak koddan kurulum yapar; PyPI rozeti yayımlanmış sürüm varsa onu gösterir.
-Kurulumdan sonra `git-stats` ve `git-stats-lite` komutları kullanılabilir.
-Kaynak kod dizininde `python src/git_stats_lite/cli.py` ile doğrudan da çalıştırabilirsiniz.
 
 ## Kullanım
 
+### Komut Satırı Arayüzü (CLI)
+
 ```sh
-python src/git_stats_lite/cli.py . --since 1y --anonymize
-python src/git_stats_lite/cli.py . --tz utc --format json --anonymize
-python src/git_stats_lite/cli.py . --anonymize --html is/report.html
-python src/git_stats_lite/cli.py . --anonymize --markdown is/summary.md
+# Son 1 yılı yazar kimliklerini anonimleştirerek analiz et
+git-stats . --since 1y --anonymize
+
+# Bağımsız tek dosya HTML raporu oluştur (etkileşimli SVG grafiklerle)
+git-stats . --html report.html
+
+# Markdown özeti ve ham JSON veri çıktısı al
+git-stats . --markdown summary.md --json stats.json
+
+# Aktivite haritasını UTC saat diliminde görüntüle
+git-stats . --tz utc --top 5
+
+# Belirli bir dalı veya revizyonu analiz et
+git-stats . --branch main --since 6m
 ```
 
-Dışa aktarmadan önce hedef klasörü oluşturun. Kurulumdan sonra
-`python src/git_stats_lite/cli.py` yerine `git-stats` veya `python -m git_stats_lite` kullanılabilir.
+> **İpucu:** Kurulum yapmadan önce `python src/git_stats_lite/cli.py` veya `python -m git_stats_lite` komutunu doğrudan kullanabilirsiniz.
 
-Python API kullanımı (kurulumdan sonra):
+### Python API
 
 ```python
 from git_stats_lite.git import stream_git_log
 from git_stats_lite.parser import parse_git_log_stream
 from git_stats_lite.stats import StatsAggregator
 
+# Git log akışını okuyup metrikleri biriktir
 stats = StatsAggregator(repo_path=".", timezone_mode="utc")
 stats.process_all(parse_git_log_stream(stream_git_log(".", since="1y")))
 report = stats.generate_report()
-print(report.total_commits)
+
+print(f"Toplam Commit: {report.total_commits}")
+print(f"Bus Factor (%50): {report.bus_factor.bus_factor_50}")
 ```
 
-## Örnekler
+## Yapılandırma ve Seçenekler
 
-[examples/demo.py](examples/demo.py), sentetik log kayıtlarını gerçek parser ve
-istatistik motorundan geçirir. Kurulum, ağ erişimi veya Git geçmişinde değişiklik gerektirmez.
+| Seçenek | Açıklama | Varsayılan |
+| --- | --- | --- |
+| `path` | Depo veya alt dizin yolu | `.` |
+| `--since DATE`, `--until DATE` | Git tarihleri veya göreli aralıklar (`1y`, `6m`, `30d` vb.) | `None` |
+| `--branch REV`, `--rev REV` | İncelenecek dal, etiket veya revizyon | Aktif dal |
+| `--all` | Tüm Git ref'lerini analize dahil et | `false` |
+| `--format {terminal,json,markdown,html}` | Birincil çıktı formatı | `terminal` |
+| `-o FILE`, `--output FILE` | Birincil çıktıyı hedef dosyaya yaz | stdout |
+| `--html [FILE]` | Bağımsız HTML raporu üret (dosyaya veya stdout'a) | `None` |
+| `--json [FILE]` | Yapılandırılmış JSON verisi üret (dosyaya veya stdout'a) | `None` |
+| `--markdown [FILE]`, `--md [FILE]` | GitHub uyumlu Markdown özeti üret | `None` |
+| `--anonymize` | Yazar adı ve e-postasını SHA-256 ile anonimleştir | `false` |
+| `--bus-factor-months N` | Bus factor penceresi (ay cinsinden; `0` = tüm geçmiş) | `6` |
+| `--top N` | Tablolarda gösterilecek satır sınırı | `10` |
+| `--tz {local,utc}` | 7x24 aktivite haritası için saat dilimi modu | `local` |
+| `--mailmap FILE` | Ek özel mailmap eşleme dosyasının yolu | `None` |
+| `--version`, `-h`, `--help` | Sürüm veya yardım metnini göster | |
 
-## Yapılandırma / seçenekler
+## SSS ve Sınırlamalar
 
-| Seçenek | Açıklama |
-| --- | --- |
-| `path` | Depo veya alt dizin; varsayılan `.` |
-| `--since DATE`, `--until DATE` | Git tarihleri veya `1y`, `6m` gibi aralıklar; `m` ay demektir |
-| `--branch REV`, `--rev REV` | Dal, etiket veya revizyon |
-| `--all` | Tüm ref'leri dahil et |
-| `--format {terminal,json,markdown,html}` | Birincil format; varsayılan terminal (tek değer seçilir) |
-| `-o FILE`, `--output FILE` | Birincil çıktıyı dosyaya yaz |
-| `--html [FILE]`, `--json [FILE]` | Dosyaya aktar; FILE yoksa stdout'a yaz |
-| `--markdown [FILE]`, `--md [FILE]` | Markdown çıktısı |
-| `--anonymize` | Yazar adı ve e-postasını hash ile değiştir |
-| `--bus-factor-months N` | Ay cinsinden pencere; varsayılan 6, tüm geçmiş için 0 |
-| `--top N` | Tablo satır sınırı; varsayılan 10 |
-| `--tz {local,utc}` | Aktivite saat dilimi; varsayılan local (tek değer seçilir) |
-| `--mailmap FILE` | Ek özel mailmap dosyası |
-| `--version`, `-h`, `--help` | Sürüm veya yardım |
+- **Bus Factor nasıl hesaplanır?**
+  Bus factor penceresi varsayılan olarak incelenen en yeni commit'ten geriye doğru 6 aydır. Katkıcılar değişen satır toplamına (eklenen + silinen) göre sıralanır. Satır değişiminin %50 ve %80'ini karşılayan en az yazar sayısı hesaplanır. Bütün diff'ler sıfırsa otomatik olarak commit sayılarına geçilir.
+- **`--anonymize` seçeneği ne yapar ve sınırları nelerdir?**
+  Yazar adları ve e-postaları deterministik ve tuzlu SHA-256 hash'leri ile (`Author-xxxxxxxx`) gizlenir. Kişi adları maskelenirken depo adı, dosya yolları ve commit zaman damgaları raporda görünmeye devam eder.
+- **Aktivite haritasında hangi saat dilimi kullanılır?**
+  `--tz local` modunda her commit'in yazıldığı anda Git'e kaydedilen yerel saat dilimi kullanılır. `--tz utc` modunda ise tüm zamanlar küresel ekip karşılaştırması için UTC'ye dönüştürülür.
+- **Sığ klonlarda (shallow clone) çalışır mı?**
+  Evet, ancak metrikler yalnızca çekilen geçmiş derinliğini yansıtır. Tüm depo geçmişi için önce `git fetch --unshallow` çalıştırılmalıdır.
 
-## Nasıl çalışır?
+## Katkıda Bulunma
 
-Git önce deponun mailmap dosyasını uygular; parser varsa ek mailmap dosyasını işler.
-Log kayıtları akış halinde okunurken metrikler biriktirilir. Bellek kullanımı katkıcı,
-dosya, gün ve commit başına tutulan kısa bus factor kayıtlarıyla birlikte büyür.
-Hotspot puanı değişen satır sayısı * çalışma dizinindeki güncel satır sayısıdır;
-bulunamayan veya boş dosyalarda commit sayısı * değişen satır sayısı kullanılır.
-Dil dağılımı güncel kaynak ağacını değil, geçmişteki satır değişimlerini gösterir.
-Raporlar harici dosya veya JavaScript kütüphanesi gerektirmez.
+Hata bildirimleri, özellik önerileri ve katkılar memnuniyetle karşılanır!
+Lütfen [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ve [SECURITY.md](SECURITY.md) belgelerini inceleyin.
 
-## Sınırlamalar / gizlilik
-
-“Local”, raporu görüntüleyenin değil yazarın commit'e kaydettiği saat dilimidir.
-Bus factor penceresi incelenen en yeni commit'te biter; bir ay yaklaşık 30,4375 gündür.
-Pencerede değişen satır yoksa incelenen tüm değişimler, bütün diff'ler sıfırsa commit
-sayıları kullanılır. Binary diff'ler sıfır satır sayılır. Merge diff'leri Git log'un
-varsayılan davranışını izler.
-
-Depo verileri ağ üzerinden gönderilmez. Takma kimliklerde sabit salt kullanıldığı için
-raporlar arasında eşleştirme yapılabilir; hash kullanımı anonimlik garantisi vermez.
-`--anonymize` açıkken de depo adı, mutlak yol, dal ve dosya yolları görünür kalır.
-Paylaşmadan önce her raporu inceleyin. Hata bildirimlerinde sentetik depolar kullanın.
-
-## Geliştirme
+Geliştirme adımları:
 
 ```sh
+# Depoyu klonlayıp geliştirme bağımlılıklarını kurun
 python -m pip install -e ".[dev]"
+
+# Linter, tip kontrolü ve testleri coverage ile çalıştırın
 python -m ruff check .
 python -m mypy src
-python -m pytest -q
-python -m build
-python -m twine check dist/*
+python -m pytest
 ```
-
-CI, Python 3.10-3.13 sürümlerini Windows ve Linux üzerinde kontrol eder.
-Testler geçici depolarda kontrollü commit'ler oluşturarak çevrimdışı çalışır.
-Build araçları yalnızca geliştirme bağımlılığıdır.
-
-## Katkıda bulunma
-
-[CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ve
-[SECURITY.md](SECURITY.md) dosyalarına bakın. Yayınlama otomasyonu PyPI trusted publishing
-kullanır; bakım sorumlusu önce yayıncı kaydını ve korumalı `pypi` ortamını yapılandırmalıdır.
 
 ## Lisans
 
-[MIT](LICENSE). Copyright (c) 2026 Yusuf Berat Zengin.
+[MIT](LICENSE). Telif Hakkı (c) 2026 Yusuf Berat Zengin.
