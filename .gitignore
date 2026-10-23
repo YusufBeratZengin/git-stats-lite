@@ -20,6 +20,7 @@ ENV/
 *.html
 *.json
 *.svg
+!docs/*.svg
 report.html
 stats.json
 
