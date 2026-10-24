@@ -10,17 +10,19 @@
 
 [English](README.md) | [Türkçe](README.tr.md)
 
+## Demo
+
 <p align="center">
   <img src="docs/demo.svg" alt="git-stats-lite terminal demosu" width="720">
 </p>
 
-## Neden git-stats-lite?
+## Why git-stats-lite?
 
 - **Sıfır çalışma zamanı bağımlılığı ve %100 çevrimdışı**: Tamamen yerel Git kopyanız üzerinde alt süreç akışıyla (subprocess streaming) çalışır. Ağ çağrısı, bulut servisi, izleme kodu veya harici kütüphane gerektirmez.
 - **Eyleme dönüştürülebilir sağlık ve bus factor metrikleri**: %50 ve %80 bus factor risk pencerelerini hesaplar, kod değişim yoğunluğunu (`değişim * boyut`) tespit eder ve yazarın yerel saatine veya UTC'ye göre 7x24 haftalık aktivite haritası sunar.
 - **Farklı formatlarda taşınabilir dışa aktarma**: Terminal tabloları, makine tarafından okunabilir JSON, GitHub uyumlu Markdown ve harici JavaScript/CSS gerektirmeyen gömülü SVG grafikli bağımsız tek dosya HTML raporları üretir.
 
-## Hızlı Başlangıç
+## Install
 
 Python 3.10+ yüklü ortamda paketi kurmadan doğrudan kaynak koddan çalıştırabilirsiniz:
 
@@ -31,16 +33,16 @@ cd git-stats-lite
 python src/git_stats_lite/cli.py . --top 5
 ```
 
-Veya pip ile yerel olarak kurun:
+Paket henüz PyPI'da yayımlanmadı. Klonladığınız depodan pip ile yerel olarak kurabilirsiniz:
 
 ```sh
 python -m pip install .
 git-stats . --top 5
 ```
 
-## Kullanım
+## Usage
 
-### Komut Satırı Arayüzü (CLI)
+### Command Line Interface
 
 ```sh
 # Son 1 yılı yazar kimliklerini anonimleştirerek analiz et
@@ -77,12 +79,12 @@ print(f"Toplam Commit: {report.total_commits}")
 print(f"Bus Factor (%50): {report.bus_factor.bus_factor_50}")
 ```
 
-## Yapılandırma ve Seçenekler
+## Configuration
 
 | Seçenek | Açıklama | Varsayılan |
 | --- | --- | --- |
 | `path` | Depo veya alt dizin yolu | `.` |
-| `--since DATE`, `--until DATE` | Git tarihleri veya göreli aralıklar (`1y`, `6m`, `30d` vb.) | `None` |
+| `--since DATE`, `--until DATE` | ISO tarihleri (ör. `2026-01-01`) veya negatif olmayan aralıklar (`y`, `m`, `w`, `d`, `h`; ör. `1y`, `6m`, `30d`) | `None` |
 | `--branch REV`, `--rev REV` | İncelenecek dal, etiket veya revizyon | Aktif dal |
 | `--all` | Tüm Git ref'lerini analize dahil et | `false` |
 | `--format {terminal,json,markdown,html}` | Birincil çıktı formatı | `terminal` |
@@ -91,13 +93,13 @@ print(f"Bus Factor (%50): {report.bus_factor.bus_factor_50}")
 | `--json [FILE]` | Yapılandırılmış JSON verisi üret (dosyaya veya stdout'a) | `None` |
 | `--markdown [FILE]`, `--md [FILE]` | GitHub uyumlu Markdown özeti üret | `None` |
 | `--anonymize` | Yazar adı ve e-postasını SHA-256 ile anonimleştir | `false` |
-| `--bus-factor-months N` | Bus factor penceresi (ay cinsinden; `0` = tüm geçmiş) | `6` |
-| `--top N` | Tablolarda gösterilecek satır sınırı | `10` |
+| `--bus-factor-months N` | Negatif olmayan bus factor penceresi (ay cinsinden; `0` = tüm geçmiş) | `6` |
+| `--top N` | Tablolarda gösterilecek satır sayısı (pozitif tam sayı) | `10` |
 | `--tz {local,utc}` | 7x24 aktivite haritası için saat dilimi modu | `local` |
 | `--mailmap FILE` | Ek özel mailmap eşleme dosyasının yolu | `None` |
 | `--version`, `-h`, `--help` | Sürüm veya yardım metnini göster | |
 
-## SSS ve Sınırlamalar
+## FAQ & Limitations
 
 - **Bus Factor nasıl hesaplanır?**
   Bus factor penceresi varsayılan olarak incelenen en yeni commit'ten geriye doğru 6 aydır. Katkıcılar değişen satır toplamına (eklenen + silinen) göre sıralanır. Satır değişiminin %50 ve %80'ini karşılayan en az yazar sayısı hesaplanır. Bütün diff'ler sıfırsa otomatik olarak commit sayılarına geçilir.
@@ -108,7 +110,7 @@ print(f"Bus Factor (%50): {report.bus_factor.bus_factor_50}")
 - **Sığ klonlarda (shallow clone) çalışır mı?**
   Evet, ancak metrikler yalnızca çekilen geçmiş derinliğini yansıtır. Tüm depo geçmişi için önce `git fetch --unshallow` çalıştırılmalıdır.
 
-## Katkıda Bulunma
+## Contributing
 
 Hata bildirimleri, özellik önerileri ve katkılar memnuniyetle karşılanır!
 Lütfen [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ve [SECURITY.md](SECURITY.md) belgelerini inceleyin.
@@ -125,6 +127,6 @@ python -m mypy src
 python -m pytest
 ```
 
-## Lisans
+## License
 
 [MIT](LICENSE). Telif Hakkı (c) 2026 Yusuf Berat Zengin.

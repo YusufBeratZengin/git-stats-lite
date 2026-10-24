@@ -65,8 +65,18 @@ class TestGit(unittest.TestCase):
             process.stderr = StringIO("fatal: ambiguous argument 'unknown': unknown revision")
             process.returncode = 128
             popen.return_value = process
-            with self.assertRaises(GitError):
+            with self.assertRaisesRegex(GitError, "^unknown branch or revision 'unknown'$"):
                 list(stream_git_log(".", revision="unknown"))
+
+    def test_other_git_errors_are_not_misreported_as_unknown_revision(self) -> None:
+        with patch("git_stats_lite.git.subprocess.Popen") as popen:
+            process = MagicMock()
+            process.stdout = StringIO("")
+            process.stderr = StringIO("fatal: unable to read tree")
+            process.returncode = 128
+            popen.return_value = process
+            with self.assertRaisesRegex(GitError, "unable to read tree"):
+                list(stream_git_log(".", revision="HEAD"))
 
     def test_is_git_available(self) -> None:
         self.assertTrue(is_git_available())

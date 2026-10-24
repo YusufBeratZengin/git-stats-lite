@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 if __package__ is None or __package__ == "":
@@ -48,6 +50,38 @@ else:
     from .stats import StatsAggregator
 
 
+def _is_valid_date(value: str) -> bool:
+    """Accept interval shorthand or an ISO calendar date with optional time."""
+    if re.fullmatch(r"[0-9]+[ymwdh]", value):
+        return True
+    if not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
+        r"(?:[T ][0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:\.[0-9]+)?)?"
+        r"(?:Z|[+-][0-9]{2}:[0-9]{2})?)?",
+        value,
+    ):
+        return False
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def _non_negative_int(value: str) -> int:
+    number = int(value)
+    if number < 0:
+        raise argparse.ArgumentTypeError("must be a non-negative integer")
+    return number
+
+
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct CLI argument parser."""
     parser = argparse.ArgumentParser(
@@ -66,13 +100,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--since",
         metavar="DATE",
-        help="Show commits more recent than a specific date or interval (e.g. '1y', '6m', '2024-01-01').",
+        help="Show commits more recent than an ISO date or interval (e.g. '1y', '6m', '2024-01-01').",
     )
 
     parser.add_argument(
         "--until",
         metavar="DATE",
-        help="Show commits older than a specific date or interval.",
+        help="Show commits older than an ISO date or interval (e.g. '2024-01-01', '30d').",
     )
 
     parser.add_argument(
@@ -139,7 +173,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--bus-factor-months",
-        type=int,
+        type=_non_negative_int,
         default=6,
         metavar="N",
         help="Evaluation window in months for bus factor calculation (0 for entire history).",
@@ -147,7 +181,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--top",
-        type=int,
+        type=_positive_int,
         default=10,
         metavar="N",
         help="Number of top authors, files, and languages to display in tables.",
@@ -179,6 +213,11 @@ def main(argv: list[str] | None = None) -> int:
     """CLI main execution function."""
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    for option in ("since", "until"):
+        value = getattr(args, option)
+        if value is not None and not _is_valid_date(value):
+            parser.error(f"invalid --{option} value '{value}'")
 
     if not is_git_available():
         sys.stderr.write("Error: 'git' executable was not found in PATH.\n")

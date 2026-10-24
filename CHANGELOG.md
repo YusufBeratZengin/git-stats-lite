@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reject invalid `--since` and `--until` dates before invoking Git.
+- Reject negative `--bus-factor-months` and non-positive `--top` values while preserving `--bus-factor-months 0` for all history.
+- Show a concise error for unknown branches or revisions.
+- Add matching README headings and clarify that installation is local until the package is published on PyPI.
+
 ## [0.1.0] - 2026-10-23
 
 ### Added

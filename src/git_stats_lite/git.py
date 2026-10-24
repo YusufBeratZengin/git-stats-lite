@@ -165,4 +165,6 @@ def stream_git_log(
         # Allow empty repository without error
         if "does not have any commits yet" in lower_err or "bad default revision 'head'" in lower_err:
             return
+        if revision and any(message in lower_err for message in ("unknown revision", "bad revision", "bad object")):
+            raise GitError(f"unknown branch or revision '{revision}'")
         raise GitError(f"git log failed (code {proc.returncode}): {stderr_output.strip()}")

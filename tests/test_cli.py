@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,6 +15,59 @@ from git_stats_lite.git import GitError
 
 
 class TestCLI(unittest.TestCase):
+    def test_invalid_dates_fail_before_git(self) -> None:
+        for option in ("--since", "--until"):
+            for value in ("garbage", "2026-02-30", "2025-02-29", "2026-13-01", "2026-01-01T25:00:00", "-3d", "1.5m", "", "20260101"):
+                with (
+                    self.subTest(option=option, value=value),
+                    patch("git_stats_lite.cli.is_git_available", side_effect=AssertionError("Git must not run")),
+                    patch("sys.stderr", new_callable=StringIO) as stderr,
+                ):
+                    with self.assertRaises(SystemExit) as cm:
+                        main([".", f"{option}={value}"])
+                    self.assertEqual(cm.exception.code, 2)
+                    self.assertEqual(stderr.getvalue().splitlines()[-1], f"git-stats: error: invalid {option} value '{value}'")
+
+    def test_valid_dates_reach_git(self) -> None:
+        for option in ("--since", "--until"):
+            for value in ("1y", "6m", "2w", "30d", "12h", "0d", "2024-02-29", "2026-01-01T12:30:00Z", "2026-01-01T12:30:00+03:00"):
+                with (
+                    self.subTest(option=option, value=value),
+                    patch("git_stats_lite.cli.is_git_available", return_value=False) as git_available,
+                    patch("sys.stderr", new_callable=StringIO),
+                ):
+                    self.assertEqual(main([".", option, value]), 1)
+                    git_available.assert_called_once_with()
+
+    def test_invalid_numeric_options_fail_before_git(self) -> None:
+        for option, values in (("--bus-factor-months", ("-3", "bad")), ("--top", ("0", "-1", "bad"))):
+            for value in values:
+                with (
+                    self.subTest(option=option, value=value),
+                    patch("git_stats_lite.cli.is_git_available", side_effect=AssertionError("Git must not run")),
+                    patch("sys.stderr", new_callable=StringIO) as stderr,
+                ):
+                    with self.assertRaises(SystemExit) as cm:
+                        main([".", option, value])
+                    self.assertEqual(cm.exception.code, 2)
+                    self.assertIn(f"argument {option}:", stderr.getvalue())
+
+    def test_numeric_boundaries(self) -> None:
+        args = build_parser().parse_args(["--bus-factor-months", "0", "--top", "1"])
+        self.assertEqual(args.bus_factor_months, 0)
+        self.assertEqual(args.top, 1)
+
+    def test_unknown_revision_has_friendly_error(self) -> None:
+        for option in ("--branch", "--rev"):
+            with (
+                self.subTest(option=option),
+                patch("sys.stderr", new_callable=StringIO) as stderr,
+                patch("sys.stdout", new_callable=StringIO) as stdout,
+            ):
+                self.assertEqual(main([".", option, "no-such-revision-for-cli-test"]), 1)
+                self.assertEqual(stderr.getvalue(), "Git error: unknown branch or revision 'no-such-revision-for-cli-test'\n")
+                self.assertEqual(stdout.getvalue(), "")
+
     def test_parser_defaults(self) -> None:
         parser = build_parser()
         args = parser.parse_args([])
