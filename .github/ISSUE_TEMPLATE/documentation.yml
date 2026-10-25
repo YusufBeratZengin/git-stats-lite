@@ -1,0 +1,20 @@
+name: Documentation
+description: Suggest improvements or report inaccuracies in documentation
+title: "docs: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping keep git-stats-lite documentation accurate and helpful!
+  - type: textarea
+    id: issue
+    attributes:
+      label: Documentation issue or improvement
+      description: What part of the documentation is outdated, unclear, or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested change
+      description: How should the documentation be updated?

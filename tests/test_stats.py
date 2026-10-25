@@ -134,6 +134,91 @@ class TestStats(unittest.TestCase):
         # UTC: Monday (0), hour 12
         self.assertEqual(report.heatmap_utc.grid[0][12], 1)
 
+    def test_calculate_bus_factor_empty_and_fallback_branches(self):
+        # 1. Empty commits
+        res_empty = calculate_bus_factor([], window_months=6, author_identities={})
+        self.assertEqual(res_empty.total_authors_in_window, 0)
+        self.assertEqual(res_empty.total_lines_in_window, 0)
+        self.assertEqual(res_empty.bus_factor_50, 0)
+        self.assertEqual(res_empty.bus_factor_80, 0)
+
+        # 2. Commits inside window have 0 lines, fallback to older commits with lines
+        now_ts = 1770000000
+        old_ts = now_ts - (400 * 86400)
+        commits_zero_window = [
+            (old_ts, "alice", 100),
+            (now_ts, "bob", 0),
+        ]
+        identities = {"alice": ("Alice", "a@example.com"), "bob": ("Bob", "b@example.com")}
+        res_fallback_all = calculate_bus_factor(commits_zero_window, window_months=6, author_identities=identities)
+        self.assertEqual(res_fallback_all.total_lines_in_window, 100)
+        self.assertEqual(res_fallback_all.bus_factor_50, 1)
+
+        # 3. All commits across all history have 0 diff lines (fallback to commit counts)
+        commits_all_zero = [
+            (now_ts, "alice", 0),
+            (now_ts, "bob", 0),
+        ]
+        res_fallback_commits = calculate_bus_factor(commits_all_zero, window_months=6, author_identities=identities)
+        self.assertEqual(res_fallback_commits.total_lines_in_window, 2)
+        self.assertEqual(res_fallback_commits.bus_factor_50, 1)
+
+        # 4. Window months = 0 (all history)
+        commits_all_hist = [
+            (old_ts, "alice", 50),
+            (now_ts, "bob", 50),
+        ]
+        res_all_hist = calculate_bus_factor(commits_all_hist, window_months=0, author_identities=identities)
+        self.assertEqual(res_all_hist.total_lines_in_window, 100)
+        self.assertEqual(res_all_hist.total_authors_in_window, 2)
+
+    def test_parse_commit_datetime_edge_cases(self):
+        from git_stats_lite.stats import _parse_commit_datetime
+
+        # 1. Naive datetime ISO string (no timezone)
+        local_dt, _ = _parse_commit_datetime("2026-06-01T10:00:00", 0)
+        self.assertIsNotNone(local_dt.tzinfo)
+        self.assertEqual(local_dt.tzinfo, timezone.utc)
+
+        # 2. Empty ISO string with positive timestamp
+        ts = 1772355600
+        local_dt2, _ = _parse_commit_datetime("", ts)
+        self.assertEqual(int(local_dt2.timestamp()), ts)
+
+        # 3. Empty ISO string and zero timestamp (fallback)
+        local_dt3, _ = _parse_commit_datetime("", 0)
+        self.assertIsNotNone(local_dt3.tzinfo)
+
+    def test_count_file_lines(self):
+        from unittest.mock import patch
+
+        from git_stats_lite.stats import count_file_lines
+
+        count = count_file_lines(".", "nonexistent_file_path.py")
+        self.assertEqual(count, 0)
+
+        with patch("os.path.isfile", return_value=True), patch("builtins.open", side_effect=OSError("Read error")):
+            self.assertEqual(count_file_lines(".", "mocked_error.py"), 0)
+
+    def test_author_accumulator_longer_name(self):
+        from git_stats_lite.stats import AuthorAccumulator
+
+        acc = AuthorAccumulator("A", "a@example.com")
+        acc.add_commit(datetime.now(timezone.utc), 1000, "", 10, 0, "Alice Contributor")
+        self.assertEqual(acc.name, "Alice Contributor")
+
+    def test_empty_repository_report(self):
+        agg = StatsAggregator(repo_name="empty", repo_path=".")
+        report = agg.generate_report()
+        self.assertEqual(report.total_commits, 0)
+        self.assertEqual(report.total_authors, 0)
+        self.assertIsNone(report.first_commit_date)
+        self.assertEqual(report.bus_factor.bus_factor_50, 0)
+
+    def test_file_diff_total_changes(self):
+        diff = FileDiff(path="module.py", additions=15, deletions=5)
+        self.assertEqual(diff.total_changes, 20)
+
 
 if __name__ == "__main__":
     unittest.main()

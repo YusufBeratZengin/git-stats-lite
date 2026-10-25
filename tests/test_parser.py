@@ -109,6 +109,56 @@ class TestParser(unittest.TestCase):
         self.assertEqual(c2.files[0].additions, 3)
         self.assertEqual(c2.files[0].deletions, 1)
 
+    def test_mailmap_from_file_edge_cases(self):
+        import tempfile
+        from unittest.mock import patch
+
+        # 1. Non-existent file
+        mm_missing = MailmapLookup.from_file("/path/to/missing/.mailmap")
+        self.assertEqual(mm_missing.lookup("User", "user@example.com"), ("User", "user@example.com"))
+
+        # 2. Existing file with comments, empty lines, and malformed lines
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as f:
+            f.write("# Comment line\n\n")
+            f.write("Proper <proper@example.com> <old@example.com>\n")
+            f.write("This is a malformed line without email brackets\n")
+            f_path = f.name
+
+        try:
+            mm = MailmapLookup.from_file(f_path)
+            self.assertEqual(mm.lookup("Old", "old@example.com"), ("Proper", "proper@example.com"))
+        finally:
+            import os
+            if os.path.exists(f_path):
+                os.remove(f_path)
+
+        # 3. OSError when reading mailmap file
+        with patch("os.path.isfile", return_value=True), patch("builtins.open", side_effect=OSError("Read error")):
+            mm_err = MailmapLookup.from_file("unreadable.mailmap")
+            self.assertEqual(mm_err.lookup("User", "user@example.com"), ("User", "user@example.com"))
+
+    def test_resolve_rename_path_malformed(self):
+        # A brace block without => while another => exists elsewhere in the path
+        path = "{single_word}/foo => new/foo"
+        self.assertEqual(resolve_rename_path(path), "new/foo")
+
+    def test_parse_git_log_stream_malformed(self):
+        # 1. Non-commit lines are ignored when no commit is active
+        lines_no_commit = ["random_line_without_commit", "another/stray/line"]
+        self.assertEqual(len(list(parse_git_log_stream(lines_no_commit))), 0)
+
+        # 2. Short commit header and non-numeric diff values
+        raw_lines = [
+            "@@@COMMIT@@@\x00short_line",
+            "malformed_stat_line",
+            "10\tNaN\tsrc/file.py",
+        ]
+        commits = list(parse_git_log_stream(raw_lines))
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0].hash, "short_line")
+        self.assertEqual(commits[0].files[0].additions, 10)
+        self.assertEqual(commits[0].files[0].deletions, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

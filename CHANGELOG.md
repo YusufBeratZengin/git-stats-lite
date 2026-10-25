@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Runnable programmatic examples: `examples/export_reports.py` demonstrating multi-format reporting and `examples/analyze_repo.py` demonstrating local repository analysis via Python API.
+- GitHub documentation issue template (`.github/ISSUE_TEMPLATE/documentation.yml`).
+- Extended unit test suite covering bus factor fallback windows, empty reports, mailmap parsing edge cases, formatter empty states, and direct script execution.
+
+### Changed
+
+- Expanded README (English and Turkish) with `--format`, `-o`, `--mailmap` CLI options, Python API report formatting snippets, and a dedicated examples index.
+- Updated `CONTRIBUTING.md` with guidelines on zero dependencies, offline synthetic tests, typed public APIs, and example verification.
+
 ### Fixed
 
 - Reject invalid `--since` and `--until` dates before invoking Git.

@@ -140,6 +140,74 @@ class TestFormatters(unittest.TestCase):
         self.assertNotIn("<script src=", html_out)
         self.assertNotIn("<link rel=\"stylesheet\" href=", html_out)
 
+    def test_format_table_empty(self):
+        from git_stats_lite.formatters.terminal import _format_table
+
+        self.assertEqual(_format_table([], [], []), "")
+
+    def test_empty_report_formatters(self):
+        empty_report = RepoReport(
+            repo_name="empty-repo",
+            repo_path="/path/to/empty",
+            branch="main",
+            first_commit_date=None,
+            last_commit_date=None,
+            total_commits=0,
+            total_authors=0,
+            total_files_touched=0,
+            total_lines_added=0,
+            total_lines_deleted=0,
+            total_lines_changed=0,
+            active_days_count=0,
+            authors=[],
+            files=[],
+            languages=[],
+            heatmap_local=ActivityHeatmap(grid=[[0] * 24 for _ in range(7)], timezone_mode="local", max_val=0, total_commits=0),
+            heatmap_utc=ActivityHeatmap(grid=[[0] * 24 for _ in range(7)], timezone_mode="utc", max_val=0, total_commits=0),
+            commits_by_day={},
+            commits_by_week={},
+            bus_factor=BusFactorResult(0, 0, 0, 0, 0, [], []),
+            is_anonymized=False,
+            generated_at="2026-05-02T00:00:00Z",
+        )
+
+        term = format_terminal_report(empty_report)
+        self.assertIn("No authors found.", term)
+        self.assertIn("No file diffs detected.", term)
+        self.assertIn("No modified files recorded.", term)
+
+        html = format_html_report(empty_report)
+        self.assertIn("No timeline activity to display.", html)
+        self.assertIn("No authors found.", html)
+        self.assertIn("No languages detected.", html)
+
+        md = format_markdown_report(empty_report)
+        self.assertIn("# Git Stats Lite: empty-repo", md)
+
+        js = format_json_report(empty_report)
+        self.assertIn('"total_commits": 0', js)
+
+    def test_html_heatmap_level_shading(self):
+        from git_stats_lite.formatters.html import _generate_svg_heatmap
+
+        # Create a heatmap with varying values to hit levels 1, 2, 3, 4
+        # max_val = 100:
+        # ratio 0.20 -> level 1
+        # ratio 0.40 -> level 2
+        # ratio 0.70 -> level 3
+        # ratio 0.90 -> level 4
+        grid = [[0] * 24 for _ in range(7)]
+        grid[0][1] = 20
+        grid[0][2] = 40
+        grid[0][3] = 70
+        grid[0][4] = 90
+        hm = ActivityHeatmap(grid=grid, timezone_mode="utc", max_val=100, total_commits=220)
+        svg = _generate_svg_heatmap(hm)
+        self.assertIn("heat-1", svg)
+        self.assertIn("heat-2", svg)
+        self.assertIn("heat-3", svg)
+        self.assertIn("heat-4", svg)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -197,6 +197,14 @@ class TestCLI(unittest.TestCase):
                 runpy.run_module("git_stats_lite", run_name="__main__")
             self.assertEqual(cm.exception.code, 0)
 
+    def test_direct_script_execution(self) -> None:
+        import runpy
+        cli_file = str(Path(__file__).resolve().parent.parent / "src" / "git_stats_lite" / "cli.py")
+        with patch.object(sys, "argv", ["cli.py", "--version"]):
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_path(cli_file, run_name="__main__")
+            self.assertEqual(cm.exception.code, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

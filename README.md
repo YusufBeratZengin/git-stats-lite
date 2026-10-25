@@ -54,11 +54,20 @@ git-stats . --html report.html
 # Export to Markdown summary and raw JSON data
 git-stats . --markdown summary.md --json stats.json
 
+# Output JSON directly to stdout or pipe to tools
+git-stats . --format json
+
+# Write Markdown report directly to a destination file
+git-stats . --format markdown -o summary.md
+
 # View activity heatmap in UTC timezone
 git-stats . --tz utc --top 5
 
 # Analyze a specific branch or revision
 git-stats . --branch main --since 6m
+
+# Consolidate author identities with custom mailmap mappings
+git-stats . --mailmap .mailmap
 ```
 
 > **Tip:** You can run `python src/git_stats_lite/cli.py` or `python -m git_stats_lite` directly before installing.
@@ -66,6 +75,7 @@ git-stats . --branch main --since 6m
 ### Python API
 
 ```python
+from git_stats_lite.formatters import format_html_report, format_markdown_report
 from git_stats_lite.git import stream_git_log
 from git_stats_lite.parser import parse_git_log_stream
 from git_stats_lite.stats import StatsAggregator
@@ -77,7 +87,19 @@ report = stats.generate_report()
 
 print(f"Total Commits: {report.total_commits}")
 print(f"Bus Factor (50%): {report.bus_factor.bus_factor_50}")
+
+# Generate self-contained HTML and Markdown outputs
+html_report = format_html_report(report)
+markdown_summary = format_markdown_report(report)
 ```
+
+### Examples
+
+Ready-to-run scripts are located in the [examples/](examples/) directory:
+
+- [demo.py](examples/demo.py): Deterministic offline analysis using synthetic git logs.
+- [export_reports.py](examples/export_reports.py): Multi-format exports (HTML with responsive SVG, Markdown, JSON, terminal).
+- [analyze_repo.py](examples/analyze_repo.py): Programmatic analysis of a local git checkout.
 
 ## Configuration
 
